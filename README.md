@@ -18,7 +18,7 @@ and supports quick meeting actions.
 
 ### From source
 
-No packaged binaries are published yet. Install from source.
+No releases and packages binaries are published yet. Install from source.
 
 Install the CLI:
 
