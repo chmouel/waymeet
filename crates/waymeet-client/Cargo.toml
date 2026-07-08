@@ -29,9 +29,9 @@ tracing-subscriber.workspace = true
 
 clap = { version = "4", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "process"] }
-toml = "0.8"
-toml_edit = "0.22"
-dirs = "5"
+toml = "1.1"
+toml_edit = "0.25"
+dirs = "6"
 uuid = { version = "1", features = ["v4"] }
 open = "5"
 arboard = "3"
