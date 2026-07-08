@@ -1,0 +1,38 @@
+---
+source: crates/waymeet-core/src/format/golden_tests.rs
+expression: output
+---
+[
+    FormattedMeeting {
+        text: "In 3 minutes - Urgent Sync",
+        urgency: Soon,
+        meeting: MeetingView {
+            id: "evt-3",
+            provider_name: "unknown",
+            title: "Urgent Sync",
+            start_local: 2025-02-05T11:03:00+01:00,
+            end_local: 2025-02-05T11:33:00+01:00,
+            is_all_day: false,
+            is_ongoing: false,
+            primary_link: Some(
+                EventLink {
+                    kind: GoogleMeet,
+                    url: "https://meet.google.com/abc-3",
+                    meeting_id: None,
+                    passcode: None,
+                },
+            ),
+            secondary_links: [],
+            calendar_url: Some(
+                "https://calendar.google.com/event/3",
+            ),
+            calendar_id: "primary",
+            user_response_status: Unknown,
+            other_attendee_count: 0,
+            location: None,
+            description: None,
+            attendees: [],
+            reminder_minutes: None,
+        },
+    },
+]

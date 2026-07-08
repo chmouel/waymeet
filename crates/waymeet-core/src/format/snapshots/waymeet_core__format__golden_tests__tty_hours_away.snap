@@ -1,0 +1,38 @@
+---
+source: crates/waymeet-core/src/format/golden_tests.rs
+expression: output
+---
+[
+    FormattedMeeting {
+        text: "13:30 - Later Today",
+        urgency: Upcoming,
+        meeting: MeetingView {
+            id: "evt-150",
+            provider_name: "unknown",
+            title: "Later Today",
+            start_local: 2025-02-05T13:30:00+01:00,
+            end_local: 2025-02-05T14:00:00+01:00,
+            is_all_day: false,
+            is_ongoing: false,
+            primary_link: Some(
+                EventLink {
+                    kind: GoogleMeet,
+                    url: "https://meet.google.com/abc-150",
+                    meeting_id: None,
+                    passcode: None,
+                },
+            ),
+            secondary_links: [],
+            calendar_url: Some(
+                "https://calendar.google.com/event/150",
+            ),
+            calendar_id: "primary",
+            user_response_status: Unknown,
+            other_attendee_count: 0,
+            location: None,
+            description: None,
+            attendees: [],
+            reminder_minutes: None,
+        },
+    },
+]

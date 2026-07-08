@@ -1,0 +1,9 @@
+---
+source: crates/waymeet-core/src/format/golden_tests.rs
+expression: output
+---
+{
+  "text": "In 15 minutes - Team Standup",
+  "tooltip": "• 11:15 - Team Standup",
+  "class": "upcoming"
+}

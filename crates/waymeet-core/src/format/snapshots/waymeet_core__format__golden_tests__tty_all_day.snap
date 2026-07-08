@@ -1,0 +1,29 @@
+---
+source: crates/waymeet-core/src/format/golden_tests.rs
+expression: output
+---
+[
+    FormattedMeeting {
+        text: "All day - Company Holiday",
+        urgency: AllDay,
+        meeting: MeetingView {
+            id: "evt-allday",
+            provider_name: "unknown",
+            title: "Company Holiday",
+            start_local: 2025-02-05T00:00:00+01:00,
+            end_local: 2025-02-06T00:00:00+01:00,
+            is_all_day: true,
+            is_ongoing: true,
+            primary_link: None,
+            secondary_links: [],
+            calendar_url: None,
+            calendar_id: "primary",
+            user_response_status: Unknown,
+            other_attendee_count: 0,
+            location: None,
+            description: None,
+            attendees: [],
+            reminder_minutes: None,
+        },
+    },
+]

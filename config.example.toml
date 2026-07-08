@@ -1,0 +1,84 @@
+# Credential values (`client_id`, `client_secret`, `username`, `password`)
+# support secret references so you don't have to store secrets in cleartext:
+#
+# | Prefix       | Behaviour                                         |
+# |--------------|----------------------------------------------------|
+# | `pass::path` | Runs `pass show path`, returns first line of stdout |
+# | `env::VAR`   | Reads environment variable `$VAR`                   |
+# | *(none)*     | Used as plain text                                  |
+[[google.accounts]]
+name = "work"
+credentials_file = "/path/to/client_secret_<id>.json"
+# client_id = "env::WAYMEET_GOOGLE_CLIENT_ID"
+# client_secret = "env::WAYMEET_GOOGLE_CLIENT_SECRET"
+# domain = "example.com"              # Google Workspace domain (per-account)
+calendar_ids = ["primary"]
+# token_path = "~/.config/waymeet/google-tokens-work.json"
+# token_storage = "keyring"           # "file" (default) or "keyring" (secret-tool)
+# read_only = true                    # request read-only access (no decline/delete)
+# scopes = ["https://www.googleapis.com/auth/calendar"]  # advanced: explicit scopes
+
+# Add more accounts as needed:
+# [[google.accounts]]
+# name = "personal"
+# credentials_file = "/path/to/other-client-secret.json"
+# calendar_ids = ["primary"]
+
+[caldav]
+url = "https://caldav.example.com/calendars/chmouel/"
+username = "env::WAYMEET_CALDAV_USER"
+password = "env::WAYMEET_CALDAV_PASSWORD"
+# calendar_hint = "work"
+# lookbehind_hours = 12
+# lookahead_hours = 48
+# insecure_tls = false
+
+# Display timing notes:
+# - Near-term meetings are shown as relative text (`In 15 minutes`).
+# - Meetings beyond `display.until_offset` (default 60 minutes) are shown as absolute time.
+# - Cross-day meetings are shown as `Tomorrow at ...` or `Mon 03 at ...`.
+[display]
+max_title_length = 30             # Truncate titles with ellipsis
+no_meeting_text = "No meeting"    # Text when no meetings
+format = "{title} {time}"         # Custom format template
+tooltip_format = "{title} {time}" # Custom tooltip format template
+hour_separator = ":"              # Hour separator character (e.g., ":", "h")
+until_offset = 60                 # Minutes offset after which absolute time is shown
+time_format = "24h"               # Time format ("24h" or "12h")
+open_with = "firefox"             # Custom command for opening URLs
+tooltip_limit = 10                # Maximum number of meetings in tooltip
+waybar_show_all_day = true        # Show all-day meetings in Waybar output
+
+[filters]
+today_only = false               # Only show today's meetings
+limit = 5                        # Maximum number of meetings
+skip_all_day = false             # Hide all-day events
+include_titles = ["standup"]     # Only show matching titles
+exclude_titles = ["lunch"]       # Hide matching titles
+include_calendars = ["Work"]     # Only include events from these calendars
+exclude_calendars = ["Holidays"] # Exclude events from these calendars
+within_minutes = 60              # Only show events starting within N minutes
+work_hours = "09:00-17:00"       # Only show events within work hours
+only_with_link = false           # Only show events with a meeting link
+privacy = false                  # Enable privacy mode (replace titles)
+privacy_title = "Meeting"        # Title to use in privacy mode
+skip_declined = false            # Skip events where you've declined
+skip_tentative = false           # Skip events where you've tentatively accepted
+skip_pending = false             # Skip events where you haven't responded
+skip_without_guests = false      # Skip events without other attendees (solo events)
+
+[notifications]
+minutes_before = [5, 1] # Fallback minutes before to notify when an event has no
+                        # usable Google Calendar reminders of its own (see below)
+# end_warning_minutes = 5 # If unset, no end-warning notification/class is emitted
+
+[server]
+socket_path = "/tmp/waymeet.sock" # Path to server socket
+timeout = 5                           # Connection timeout in seconds
+auto_start = true                     # Set to false when using systemd to manage the server
+# sync_interval_secs = 300            # Interval between calendar syncs (minimum 30)
+# refresh_cooldown_secs = 30          # Cooldown after a manual refresh
+# notify_tick_secs = 30               # Interval between notification checks (minimum 5)
+
+# debug = false
+# google_domain = "example.com"        # Google Workspace domain (for calendar URLs)

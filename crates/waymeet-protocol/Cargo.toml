@@ -1,0 +1,16 @@
+[package]
+name = "waymeet-protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "IPC framing and request/response types"
+
+[dependencies]
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+waymeet-core = { path = "../waymeet-core" }
+
+[dev-dependencies]
+insta.workspace = true

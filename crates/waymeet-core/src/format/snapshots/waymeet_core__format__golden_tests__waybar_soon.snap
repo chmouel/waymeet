@@ -1,0 +1,9 @@
+---
+source: crates/waymeet-core/src/format/golden_tests.rs
+expression: output
+---
+{
+  "text": "In 3 minutes - Urgent Call",
+  "tooltip": "• 11:03 - Urgent Call",
+  "class": "soon"
+}

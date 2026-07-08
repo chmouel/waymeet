@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross
+        if: matrix.target != 'x86_64-unknown-linux-gnu'
+        uses: taiki-e/install-action@cross
+
+      - name: Cache cargo artefacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build (native)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: cargo build --release --target ${{ matrix.target }} -p waymeet-client
+
+      - name: Build (cross)
+        if: matrix.target != 'x86_64-unknown-linux-gnu'
+        run: cross build --release --target ${{ matrix.target }} -p waymeet-client
+
+      - name: Package archive
+        run: |
+          set -euo pipefail
+          staging="waymeet-${{ github.ref_name }}-${{ matrix.target }}"
+          mkdir -p "${staging}"
+          cp target/${{ matrix.target }}/release/waymeet "${staging}/"
+          cp README.md LICENSE "${staging}/" 2>/dev/null || cp README.md "${staging}/"
+          tar -czf "${staging}.tar.gz" "${staging}"
+
+      - name: Upload build artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: waymeet-${{ matrix.target }}
+          path: waymeet-*.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/waymeet-*.tar.gz
+          generate_release_notes: true

@@ -1,0 +1,9 @@
+---
+source: crates/waymeet-core/src/format/golden_tests.rs
+expression: output
+---
+{
+  "text": "20 minutes to go - Sprint Review",
+  "tooltip": "• 10:50 - Sprint Review",
+  "class": "ongoing"
+}
