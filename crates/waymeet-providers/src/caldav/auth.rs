@@ -5,7 +5,6 @@
 //! - RFC 7616 (Digest)
 
 use base64::Engine;
-use rand::Rng;
 use std::collections::HashMap;
 
 /// HTTP Digest authentication handler.
@@ -184,8 +183,7 @@ fn parse_auth_params(content: &str) -> HashMap<String, String> {
 
 /// Generates a random client nonce.
 fn generate_cnonce() -> String {
-    let mut rng = rand::rng();
-    let bytes: [u8; 8] = rng.random();
+    let bytes: [u8; 8] = std::array::from_fn(|_| rand::random());
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 

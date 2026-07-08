@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
-use waymeet_core::MeetingView;
 use tracing::{debug, trace};
+use waymeet_core::MeetingView;
 
 /// Cache entry containing events and metadata.
 #[derive(Debug, Clone)]

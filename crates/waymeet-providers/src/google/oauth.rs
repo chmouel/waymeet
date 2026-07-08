@@ -28,7 +28,6 @@ use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use rand::Rng as _;
 use sha2::{Digest, Sha256};
 use tracing::{debug, error, info, warn};
 
@@ -622,8 +621,7 @@ impl PkceFlow {
 
     /// Generates a cryptographically random code verifier.
     fn generate_verifier() -> String {
-        let mut rng = rand::rng();
-        let bytes: Vec<u8> = (0..CODE_VERIFIER_LENGTH).map(|_| rng.random()).collect();
+        let bytes: Vec<u8> = (0..CODE_VERIFIER_LENGTH).map(|_| rand::random()).collect();
         URL_SAFE_NO_PAD.encode(&bytes)
     }
 
@@ -635,8 +633,7 @@ impl PkceFlow {
 
     /// Generates a random state string for CSRF protection.
     fn generate_state() -> String {
-        let mut rng = rand::rng();
-        let bytes: Vec<u8> = (0..16).map(|_| rng.random()).collect();
+        let bytes: Vec<u8> = (0..16).map(|_| rand::random()).collect();
         URL_SAFE_NO_PAD.encode(&bytes)
     }
 

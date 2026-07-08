@@ -253,7 +253,7 @@ pub fn parse_propfind_response(xml: &str) -> Vec<DiscoveredCalendar> {
             }
             Ok(Event::Text(e)) => {
                 if let Some(ref elem) = current_element {
-                    let text = e.unescape().unwrap_or_default().to_string();
+                    let text = e.decode().unwrap_or_default().to_string();
                     match elem.as_str() {
                         "href" => current_href = Some(text),
                         "displayname" => current_displayname = Some(text),
@@ -322,7 +322,7 @@ pub fn parse_report_response(xml: &str) -> Vec<(String, Option<String>, String)>
             }
             Ok(Event::Text(e)) => {
                 if let Some(ref elem) = current_element {
-                    let text = e.unescape().unwrap_or_default().to_string();
+                    let text = e.decode().unwrap_or_default().to_string();
                     match elem.as_str() {
                         "href" => current_href = Some(text),
                         "getetag" => current_etag = Some(text.trim_matches('"').to_string()),

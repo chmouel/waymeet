@@ -316,10 +316,7 @@ async fn notify_daemon(config: &ClientConfig) {
         return;
     }
 
-    match client
-        .send(waymeet_protocol::Request::refresh(true))
-        .await
-    {
+    match client.send(waymeet_protocol::Request::refresh(true)).await {
         Ok(_) => {
             println!("Running daemon notified; calendars will refresh shortly.");
         }

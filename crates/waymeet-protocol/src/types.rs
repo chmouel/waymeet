@@ -1,8 +1,8 @@
 //! Request and response types for the waymeet protocol.
 
 use chrono::{DateTime, Utc};
-use waymeet_core::MeetingView;
 use serde::{Deserialize, Serialize};
+use waymeet_core::MeetingView;
 
 use crate::PROTOCOL_VERSION;
 

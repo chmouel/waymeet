@@ -184,11 +184,6 @@ mod tests {
     #[test]
     fn default_client() {
         let client = SocketClient::with_defaults();
-        assert!(
-            client
-                .socket_path()
-                .to_string_lossy()
-                .contains("waymeet")
-        );
+        assert!(client.socket_path().to_string_lossy().contains("waymeet"));
     }
 }

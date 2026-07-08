@@ -412,9 +412,7 @@ impl CalDavSettings {
     }
 
     /// Converts the client configuration to a provider configuration.
-    pub fn to_provider_config(
-        &self,
-    ) -> Result<waymeet_providers::caldav::CalDavConfig, String> {
+    pub fn to_provider_config(&self) -> Result<waymeet_providers::caldav::CalDavConfig, String> {
         use waymeet_providers::caldav::CalDavConfig;
 
         let url = self.url.as_deref().ok_or_else(|| {
@@ -608,9 +606,7 @@ impl GoogleAccountSettings {
     ///
     /// Resolves credentials (expanding `pass::` / `env::` references) and
     /// builds a `GoogleConfig` suitable for the provider.
-    pub fn to_provider_config(
-        &self,
-    ) -> Result<waymeet_providers::google::GoogleConfig, String> {
+    pub fn to_provider_config(&self) -> Result<waymeet_providers::google::GoogleConfig, String> {
         use waymeet_providers::google::GoogleConfig;
 
         let credentials = self.resolve_credentials()?;

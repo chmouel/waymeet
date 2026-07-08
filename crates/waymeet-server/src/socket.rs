@@ -282,8 +282,7 @@ impl Connection {
             );
         }
 
-        let json =
-            serde_json::to_vec(envelope).map_err(waymeet_protocol::ProtocolError::from)?;
+        let json = serde_json::to_vec(envelope).map_err(waymeet_protocol::ProtocolError::from)?;
 
         let len = json.len() as u32;
         if len > MAX_MESSAGE_SIZE {

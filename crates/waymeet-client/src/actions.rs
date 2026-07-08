@@ -1,8 +1,8 @@
 //! Meeting actions: open URLs, copy to clipboard, snooze.
 
+use tracing::{debug, info};
 use waymeet_core::{MeetingView, extract_links_from_text};
 use waymeet_protocol::{Request, Response};
-use tracing::{debug, info};
 
 use crate::error::{ClientError, ClientResult};
 use crate::socket::SocketClient;

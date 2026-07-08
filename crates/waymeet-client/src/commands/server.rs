@@ -404,10 +404,7 @@ async fn sync_all_providers(
     }
 }
 
-fn map_provider_error(
-    provider_name: &str,
-    err: waymeet_providers::ProviderError,
-) -> ErrorResponse {
+fn map_provider_error(provider_name: &str, err: waymeet_providers::ProviderError) -> ErrorResponse {
     let code = match err.code() {
         ProviderErrorCode::AuthenticationFailed => ErrorCode::AuthenticationFailed,
         ProviderErrorCode::RateLimited => ErrorCode::RateLimited,
