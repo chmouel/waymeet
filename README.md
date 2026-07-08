@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/chmouel/waymeet/graph/badge.svg?token=P3JYJCCSNF)](https://codecov.io/gh/chmouel/waymeet)
+
 # WayMeet
 
 WayMeet is a Linux calendar tool with a CLI/daemon architecture. It reads
