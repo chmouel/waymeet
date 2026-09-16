@@ -25,15 +25,15 @@ urlencoding.workspace = true
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "charset", "http2"], optional = true }
 icalendar = { version = "0.17", optional = true }
 md5 = { version = "0.8", optional = true }
-base64 = { version = "0.22", optional = true }
+base64 = { version = "0.23", optional = true }
 rand = { version = "0.10", optional = true }
-quick-xml = { version = "0.41", features = ["serialize"], optional = true }
+quick-xml = { version = "0.42", features = ["serialize"], optional = true }
 tokio = { version = "1", features = ["sync"], optional = true }
 
 # Google dependencies (optional)
 sha2 = { version = "0.11", optional = true }
 open = { version = "5", optional = true }
-dirs = { version = "6", optional = true }
+dirs = { version = "7", optional = true }
 
 [dev-dependencies]
 serde_json.workspace = true
