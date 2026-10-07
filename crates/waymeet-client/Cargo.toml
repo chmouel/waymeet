@@ -31,7 +31,7 @@ clap = { version = "4", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "process"] }
 toml = "1.1"
 toml_edit = "0.25"
-dirs = "6"
+dirs = "7"
 uuid = { version = "1", features = ["v4"] }
 open = "5"
 arboard = "3"
