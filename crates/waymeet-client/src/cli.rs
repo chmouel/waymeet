@@ -80,6 +80,18 @@ pub struct Cli {
     #[arg(long)]
     pub refresh: bool,
 
+    /// Hide the displayed meeting until it ends, revealing the next one
+    #[arg(long, group = "dismiss_action")]
+    pub dismiss: bool,
+
+    /// Restore the most recently dismissed meeting
+    #[arg(long, group = "dismiss_action")]
+    pub undismiss: bool,
+
+    /// Restore every dismissed meeting
+    #[arg(long, group = "dismiss_action")]
+    pub undismiss_all: bool,
+
     // --- Connection flags ---
     /// Path to the server socket (overrides config)
     #[arg(long, env = "WAYMEET_SOCKET")]
@@ -112,6 +124,9 @@ impl Cli {
             || self.create.is_some()
             || self.snooze.is_some()
             || self.refresh
+            || self.dismiss
+            || self.undismiss
+            || self.undismiss_all
     }
 
     /// Determine effective debug level from CLI args, env, and config
@@ -245,4 +260,18 @@ pub enum ConfigAction {
 
     /// Show configuration file path
     Path,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dismiss_flags_are_actions_and_mutually_exclusive() {
+        let cli = Cli::try_parse_from(["waymeet", "--dismiss"]).unwrap();
+        assert!(cli.dismiss && cli.has_action());
+
+        assert!(Cli::try_parse_from(["waymeet", "--dismiss", "--undismiss"]).is_err());
+        assert!(Cli::try_parse_from(["waymeet", "--undismiss", "--undismiss-all"]).is_err());
+    }
 }

@@ -148,8 +148,25 @@ async fn run_default(cli: &Cli, config: &ClientConfig) -> ClientResult<()> {
         return waymeet_client::actions::snooze(&client, minutes).await;
     }
 
+    if cli.undismiss || cli.undismiss_all {
+        let titles = waymeet_client::actions::undismiss(&client, cli.undismiss_all).await?;
+        if titles.is_empty() {
+            println!("There are no dismissed meetings to restore.");
+        }
+        for title in titles {
+            println!("Restored: {}", title);
+        }
+        return Ok(());
+    }
+
     // Fetch meetings from the server
     let meetings = fetch_meetings(cli, config, &client).await?;
+
+    if cli.dismiss {
+        let title = waymeet_client::actions::dismiss(&client, &meetings).await?;
+        println!("Dismissed: {}", title);
+        return Ok(());
+    }
 
     // Handle action flags (open/copy) before rendering
     if cli.open_meet_url {

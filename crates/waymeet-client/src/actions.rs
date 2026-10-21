@@ -1,7 +1,7 @@
-//! Meeting actions: open URLs, copy to clipboard, snooze.
+//! Meeting actions: open URLs, copy to clipboard, snooze, dismiss.
 
 use tracing::{debug, info};
-use waymeet_core::{MeetingView, extract_links_from_text};
+use waymeet_core::{MeetingView, extract_links_from_text, next_meeting_for_display};
 use waymeet_protocol::{Request, Response};
 
 use crate::error::{ClientError, ClientResult};
@@ -114,6 +114,42 @@ pub async fn snooze(client: &SocketClient, minutes: u32) -> ClientResult<()> {
         ))),
         _ => Err(ClientError::Protocol(
             "unexpected response to snooze request".into(),
+        )),
+    }
+}
+
+/// Dismisses the meeting currently displayed so the next one is shown.
+/// Returns the dismissed meeting's title.
+pub async fn dismiss(client: &SocketClient, meetings: &[MeetingView]) -> ClientResult<String> {
+    let meeting = next_meeting_for_display(meetings)
+        .ok_or_else(|| ClientError::Action("no meetings found".into()))?;
+    info!(event_id = %meeting.id, "dismissing meeting");
+
+    match client.send(Request::dismiss(meeting)).await? {
+        Response::Ok => Ok(meeting.title.clone()),
+        Response::Error { error } => Err(ClientError::Protocol(format!(
+            "dismiss failed: {}",
+            error.message
+        ))),
+        _ => Err(ClientError::Protocol(
+            "unexpected response to dismiss request".into(),
+        )),
+    }
+}
+
+/// Restores the most recently dismissed meeting, or all of them.
+/// Returns the restored meeting titles.
+pub async fn undismiss(client: &SocketClient, all: bool) -> ClientResult<Vec<String>> {
+    info!(all = all, "restoring dismissed meetings");
+
+    match client.send(Request::undismiss(all)).await? {
+        Response::Undismissed { titles } => Ok(titles),
+        Response::Error { error } => Err(ClientError::Protocol(format!(
+            "undismiss failed: {}",
+            error.message
+        ))),
+        _ => Err(ClientError::Protocol(
+            "unexpected response to undismiss request".into(),
         )),
     }
 }
@@ -370,6 +406,68 @@ fn first_meeting_with_link(meetings: &[MeetingView]) -> ClientResult<&MeetingVie
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn meeting(id: &str, start_offset_mins: i64, is_all_day: bool) -> MeetingView {
+        let start = chrono::Local::now() + chrono::Duration::minutes(start_offset_mins);
+        MeetingView {
+            id: id.to_string(),
+            provider_name: "google:work".to_string(),
+            title: format!("Meeting {}", id),
+            start_local: start,
+            end_local: start + chrono::Duration::hours(if is_all_day { 12 } else { 1 }),
+            is_all_day,
+            is_ongoing: start_offset_mins < 0,
+            primary_link: None,
+            secondary_links: vec![],
+            calendar_url: None,
+            calendar_id: "primary".to_string(),
+            user_response_status: waymeet_core::ResponseStatus::Unknown,
+            other_attendee_count: 0,
+            location: None,
+            description: None,
+            attendees: vec![],
+            reminder_minutes: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn dismiss_and_undismiss_round_trip_through_server() {
+        let dir = tempfile::tempdir().unwrap();
+        let socket_path = dir.path().join("waymeet.sock");
+        let state = waymeet_server::new_shared_state();
+        state.write().await.set_meetings(vec![
+            meeting("holiday", -60, true),
+            meeting("ongoing", -10, false),
+            meeting("next", 5, false),
+        ]);
+        let server =
+            waymeet_server::SocketServer::new(waymeet_server::ServerConfig::new(&socket_path))
+                .await
+                .unwrap();
+        let handler = waymeet_server::make_connection_handler(state.clone());
+        let server_task = tokio::spawn(async move { server.run(handler).await });
+
+        let client = SocketClient::new(&socket_path, std::time::Duration::from_secs(2));
+        let meetings = state.read().await.get_meetings(None);
+
+        // The displayed (first timed) meeting is dismissed, not the all-day one.
+        let title = dismiss(&client, &meetings).await.unwrap();
+        assert_eq!(title, "Meeting ongoing");
+        let remaining = state.read().await.get_meetings(None);
+        assert_eq!(next_meeting_for_display(&remaining).unwrap().id, "next");
+
+        assert_eq!(
+            undismiss(&client, false).await.unwrap(),
+            vec!["Meeting ongoing".to_string()]
+        );
+        assert!(undismiss(&client, true).await.unwrap().is_empty());
+        assert!(matches!(
+            dismiss(&client, &[]).await,
+            Err(ClientError::Action(_))
+        ));
+
+        server_task.abort();
+    }
 
     #[test]
     fn extract_meeting_id_google_meet() {

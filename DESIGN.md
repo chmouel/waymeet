@@ -61,7 +61,7 @@ Key modules:
 
 - `src/main.rs`: CLI execution, auto-spawn, filter building, rendering, status output.
 - `src/cli.rs`: Clap schema (flags and subcommands).
-- `src/actions.rs`: local user actions and request-based actions (`refresh`, `snooze`). Also holds `edit_calendar_event_url`, currently unused by any CLI path (see §9).
+- `src/actions.rs`: local user actions and request-based actions (`refresh`, `snooze`, `dismiss`, `undismiss`). Also holds `edit_calendar_event_url`, currently unused by any CLI path (see §9).
 - `src/socket.rs`: Unix socket request/response exchange with request correlation.
 - `src/commands/mod.rs`: command module registration.
 - `src/commands/auth.rs`: Google auth command and credential persistence.
@@ -75,7 +75,8 @@ Key modules:
 Key modules:
 
 - `scheduler.rs`: interval sync, jitter, cooldown, jittered capped exponential backoff (never gives up permanently: past the failure ceiling it keeps probing at the capped cadence, and forced refreshes always run), commands (`Refresh`, `SyncNow`, `Pause`, `Resume`, `Stop`).
-- `handler.rs`: protocol request dispatch (`Ping`, `Status`, `GetMeetings`, `Refresh`, `Snooze`, `MutateEvent`, `Shutdown`), filter application, and per-provider meeting state (last-known-good retention).
+- `handler.rs`: protocol request dispatch (`Ping`, `Status`, `GetMeetings`, `Refresh`, `Snooze`, `MutateEvent`, `Dismiss`, `Undismiss`, `Shutdown`), filter application, and per-provider meeting state (last-known-good retention).
+- `dismiss.rs`: `DismissStore`, the locally dismissed meetings keyed by provider, calendar, event ID and start time; persisted atomically (0600 JSON) and pruned once each meeting ends.
 - `socket.rs`: Unix listener, framed protocol I/O, stale socket cleanup, connection concurrency limit.
 - `notify.rs`: desktop notifications, dedup hash (`SHA-256`) with time-based eviction (24 h retention, size-capped oldest-first), optional morning agenda.
 - `signals.rs`: `SIGTERM`/`SIGINT` shutdown and `SIGHUP` reload signalling.
@@ -93,12 +94,12 @@ Key modules:
 
 - `event.rs`: canonical event types (`NormalizedEvent`, `MeetingView`, link and attendee metadata).
 - `links.rs`: URL extraction, SafeLinks unwrapping, service classification across meeting providers (Zoom, Meet, Teams, Webex, Jitsi, and others).
-- `format/mod.rs`: formatter for TTY, Waybar JSON, structured JSON output; `format/golden_tests.rs` holds the snapshot test suite.
+- `format/mod.rs`: formatter for TTY, Waybar JSON, structured JSON output; `next_meeting_for_display` is the single rule for which meeting Waybar shows and `--dismiss` targets; `format/golden_tests.rs` holds the snapshot test suite.
 - `time.rs`: time-window abstractions.
 
 ### 3.5 `waymeet-protocol`
 
-- `types.rs`: `Envelope`, `Request`/`Response` (including `MutateEvent` with `EventMutationAction::{Decline, Delete}`), `MeetingsFilter`, provider status/state payloads.
+- `types.rs`: `Envelope`, `Request`/`Response` (including `MutateEvent` with `EventMutationAction::{Decline, Delete}`, `Dismiss`, and `Undismiss` answered by `Response::Undismissed`), `MeetingsFilter`, provider status/state payloads.
 - `framing.rs`: serialization with length-prefix framing.
 - `error.rs`: protocol error model.
 
@@ -125,6 +126,9 @@ Top-level options:
 - `--create <SERVICE>`
 - `--create-url <URL>`
 - `--refresh`
+- `--dismiss`
+- `--undismiss`
+- `--undismiss-all`
 - `--socket-path <PATH>`
 
 Subcommands:
@@ -238,6 +242,11 @@ Credential resolution supports:
   - open calendar day
   - open link from clipboard
   - create meeting URLs for meet/zoom/teams/gcal
+- Local dismissal: `--dismiss` hides the displayed meeting until it ends
+  (calendar untouched). The server filters dismissed meetings in
+  `ServerState::get_meetings`, so every output and the notification ticker
+  skip them. Dismissals persist in `~/.local/share/waymeet/dismissed-events.json`;
+  `--undismiss` restores the most recent, `--undismiss-all` restores all.
 
 ### Notifications
 

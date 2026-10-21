@@ -10,6 +10,7 @@ pub use event::{Attendee, EventLink, LinkKind, MeetingView, NormalizedEvent, Res
 pub use format::{
     FormatOptions, FormattedMeeting, JsonMeeting, JsonOutput, OutputFormat, OutputFormatter,
     TimeFormat, UrgencyClass, WaybarOutput, bulletize, ellipsis, html_escape, make_hyperlink,
+    next_meeting_for_display,
 };
 pub use links::{LinkDetector, detect_link, extract_links_from_text};
 pub use time::{EventTime, TimeWindow};

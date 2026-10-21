@@ -17,6 +17,7 @@ use waymeet_protocol::{
     Response, StatusInfo,
 };
 
+use crate::dismiss::{DismissStore, DismissedMeeting};
 use crate::error::{ServerError, ServerResult};
 use crate::notify::NotifyEngine;
 use crate::scheduler::SchedulerHandle;
@@ -41,6 +42,8 @@ pub struct ServerState {
     shutdown_requested: bool,
     /// Scheduler handle for triggering refreshes.
     scheduler_handle: Option<SchedulerHandle>,
+    /// Meetings the user has dismissed locally.
+    dismissed: DismissStore,
 }
 
 impl Default for ServerState {
@@ -61,6 +64,7 @@ impl ServerState {
             snoozed_until: None,
             shutdown_requested: false,
             scheduler_handle: None,
+            dismissed: DismissStore::in_memory(),
         }
     }
 
@@ -124,6 +128,7 @@ impl ServerState {
 
         // Filter out meetings that have already ended, including all-day events.
         meetings.retain(|m| !m.has_ended_at(now));
+        meetings.retain(|m| !self.dismissed.is_dismissed(m));
 
         if let Some(filter) = filter {
             // Apply skip_all_day filter
@@ -248,6 +253,42 @@ impl ServerState {
         }
 
         meetings
+    }
+
+    /// Replaces the dismissed meetings store (e.g. with a persisted one).
+    pub fn set_dismiss_store(&mut self, store: DismissStore) {
+        self.dismissed = store;
+    }
+
+    /// Dismisses the cached meeting instance matching the given identifiers.
+    /// Returns its title, or `None` if no such meeting is cached.
+    pub fn dismiss(
+        &mut self,
+        provider_name: &str,
+        calendar_id: &str,
+        event_id: &str,
+        start: DateTime<Utc>,
+    ) -> Option<String> {
+        let meeting = self.meetings.iter().find(|m| {
+            m.id == event_id
+                && m.start_local.with_timezone(&Utc) == start
+                && m.calendar_id == calendar_id
+                && m.provider_name == provider_name
+        })?;
+        info!(title = %meeting.title, event_id = %event_id, "Meeting dismissed");
+        self.dismissed.dismiss(meeting);
+        Some(meeting.title.clone())
+    }
+
+    /// Restores the most recently dismissed meeting, or all of them.
+    pub fn undismiss(&mut self, all: bool) -> Vec<DismissedMeeting> {
+        let restored = if all {
+            self.dismissed.clear()
+        } else {
+            self.dismissed.undo_last().into_iter().collect()
+        };
+        info!(count = restored.len(), "Dismissed meetings restored");
+        restored
     }
 
     /// Snoozes notifications for the given number of minutes.
@@ -486,6 +527,26 @@ impl RequestHandler {
                         ErrorCode::ProviderError,
                         "event mutation is not configured on this server",
                     )
+                }
+            }
+            Request::Dismiss {
+                provider_name,
+                calendar_id,
+                event_id,
+                start,
+            } => {
+                debug!(provider = %provider_name, event_id = %event_id, "Handling Dismiss request");
+                let mut state = self.state.write().await;
+                match state.dismiss(provider_name, calendar_id, event_id, *start) {
+                    Some(_) => Response::Ok,
+                    None => Response::error(ErrorCode::NotFound, "meeting not found"),
+                }
+            }
+            Request::Undismiss { all } => {
+                debug!(all = *all, "Handling Undismiss request");
+                let restored = self.state.write().await.undismiss(*all);
+                Response::Undismissed {
+                    titles: restored.into_iter().map(|d| d.title).collect(),
                 }
             }
             Request::Refresh { force } => {
@@ -1017,6 +1078,60 @@ mod tests {
 
         let state = state.read().await;
         assert!(state.is_snoozed());
+    }
+
+    #[tokio::test]
+    async fn request_handler_dismiss_reveals_next_overlapping_meeting() {
+        let state = new_shared_state();
+        let ongoing = provider_meeting("ongoing", "google:work", -10);
+        let next = provider_meeting("next", "google:work", 5);
+        state
+            .write()
+            .await
+            .set_provider_meetings("google:work", vec![ongoing.clone(), next.clone()]);
+        let handler = RequestHandler::new(state.clone());
+
+        let response = handler.handle(&Request::dismiss(&ongoing)).await;
+        assert_eq!(response, Response::Ok);
+        // The notification ticker reads the unfiltered list, so it skips it too.
+        let ids: Vec<_> = state
+            .read()
+            .await
+            .get_meetings(None)
+            .into_iter()
+            .map(|m| m.id)
+            .collect();
+        assert_eq!(ids, vec!["next"]);
+
+        handler.handle(&Request::dismiss(&next)).await;
+        assert!(state.read().await.get_meetings(None).is_empty());
+
+        let response = handler.handle(&Request::undismiss(false)).await;
+        assert_eq!(
+            response,
+            Response::Undismissed {
+                titles: vec!["Meeting next".to_string()]
+            }
+        );
+        let response = handler.handle(&Request::undismiss(true)).await;
+        assert_eq!(
+            response,
+            Response::Undismissed {
+                titles: vec!["Meeting ongoing".to_string()]
+            }
+        );
+        assert_eq!(state.read().await.get_meetings(None).len(), 2);
+    }
+
+    #[tokio::test]
+    async fn request_handler_dismiss_unknown_meeting() {
+        let state = new_shared_state();
+        let handler = RequestHandler::new(state);
+
+        let response = handler
+            .handle(&Request::dismiss(&provider_meeting("x", "google:work", 5)))
+            .await;
+        assert_eq!(response.as_error().unwrap().code, ErrorCode::NotFound);
     }
 
     #[tokio::test]

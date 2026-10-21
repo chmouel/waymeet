@@ -21,9 +21,9 @@ use waymeet_providers::{
 };
 
 use waymeet_server::{
-    EventMutationRequest, EventMutator, NotifyConfig, NotifyEngine, PidFile, Scheduler,
-    SchedulerConfig, ServerConfig, SharedState, SignalHandler, SocketServer, default_pid_path,
-    make_connection_handler_with_mutator_and_notify, new_shared_state,
+    DismissStore, EventMutationRequest, EventMutator, NotifyConfig, NotifyEngine, PidFile,
+    Scheduler, SchedulerConfig, ServerConfig, SharedState, SignalHandler, SocketServer,
+    default_pid_path, make_connection_handler_with_mutator_and_notify, new_shared_state,
 };
 
 use crate::cli::Cli;
@@ -76,8 +76,12 @@ pub async fn run(cli: &Cli, config: &ClientConfig) -> ClientResult<()> {
     let signal_handler = SignalHandler::new();
     signal_handler.spawn_listener();
 
-    // 4. Shared state
+    // 4. Shared state, with dismissed meetings restored from disk
     let state = new_shared_state();
+    state
+        .write()
+        .await
+        .set_dismiss_store(DismissStore::load(ClientConfig::dismissed_events_path()));
 
     // 5. Scheduler (tunable via [server] in config.toml)
     let scheduler = Scheduler::new(build_scheduler_config(config));

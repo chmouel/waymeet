@@ -23,6 +23,7 @@
 
 mod cache;
 mod config;
+mod dismiss;
 mod error;
 mod handler;
 mod notify;
@@ -33,6 +34,7 @@ mod socket;
 
 pub use cache::{CacheEntry, EventCache};
 pub use config::{ServerConfig, default_socket_path};
+pub use dismiss::{DismissStore, DismissedMeeting};
 pub use error::{ServerError, ServerResult};
 pub use handler::{
     EventMutationRequest, EventMutator, RequestHandler, ServerState, SharedState,

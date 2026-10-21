@@ -13,6 +13,7 @@ and supports quick meeting actions.
 - Google event actions: edit in calendar, decline, and delete.
 - Detects meeting links for Zoom, Meet, Teams, Webex, Jitsi, and more.
 - Schedules desktop notifications with snooze support.
+- Dismisses a meeting locally so the next one is shown instead.
 - Provides action commands for joining meetings, copying meeting details,
   refreshing providers, and creating meeting links.
 
@@ -112,6 +113,34 @@ The CLI starts the daemon automatically when needed.
 - `waymeet --create meet|zoom|teams|gcal`
 - `waymeet --refresh`
 - `waymeet --snooze N`
+- `waymeet --dismiss`
+- `waymeet --undismiss` / `waymeet --undismiss-all`
+
+### Dismissing a meeting
+
+When meetings overlap, or one you are not attending is still running, use
+`waymeet --dismiss` to hide the meeting currently displayed. WayMeet then shows
+the next one, and sends no further notifications for the dismissed meeting.
+Your calendar is left untouched.
+
+A dismissed meeting stays hidden until it ends; the list survives daemon
+restarts and is kept in `~/.local/share/waymeet/dismissed-events.json`.
+`waymeet --undismiss` restores the most recently dismissed meeting, and
+`waymeet --undismiss-all` restores every one.
+
+In Waybar, you might bind it to a click on the module:
+
+```jsonc
+"custom/waymeet": {
+  "exec": "waymeet --waybar",
+  "return-type": "json",
+  "interval": 60,
+  "on-click-middle": "waymeet --dismiss",
+  "on-click-right": "waymeet --undismiss"
+}
+```
+
+Waybar redraws the module on its next `interval`.
 
 ## Configuration
 

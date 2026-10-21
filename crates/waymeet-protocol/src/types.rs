@@ -89,6 +89,24 @@ pub enum Request {
         action: EventMutationAction,
     },
 
+    /// Hide a meeting locally until it ends, without touching the calendar.
+    Dismiss {
+        /// Provider name (e.g. "google:work").
+        provider_name: String,
+        /// Calendar identifier in that provider.
+        calendar_id: String,
+        /// Provider event identifier.
+        event_id: String,
+        /// Start time of the meeting instance being dismissed.
+        start: DateTime<Utc>,
+    },
+
+    /// Restore dismissed meetings.
+    Undismiss {
+        /// Restore every dismissed meeting rather than only the most recent.
+        all: bool,
+    },
+
     /// Request server shutdown.
     Shutdown,
 
@@ -132,6 +150,21 @@ impl Request {
             event_id: event_id.into(),
             action,
         }
+    }
+
+    /// Creates a Dismiss request for the given meeting.
+    pub fn dismiss(meeting: &MeetingView) -> Self {
+        Self::Dismiss {
+            provider_name: meeting.provider_name.clone(),
+            calendar_id: meeting.calendar_id.clone(),
+            event_id: meeting.id.clone(),
+            start: meeting.start_local.with_timezone(&Utc),
+        }
+    }
+
+    /// Creates an Undismiss request.
+    pub fn undismiss(all: bool) -> Self {
+        Self::Undismiss { all }
     }
 }
 
@@ -412,6 +445,12 @@ pub enum Response {
 
     /// Pong response to Ping.
     Pong,
+
+    /// Titles of the meetings restored by an Undismiss request.
+    Undismissed {
+        /// Restored meeting titles.
+        titles: Vec<String>,
+    },
 }
 
 impl Response {
@@ -638,6 +677,7 @@ impl std::error::Error for ErrorResponse {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::TimeZone;
 
     #[test]
     fn envelope_creation() {
@@ -713,6 +753,35 @@ mod tests {
 
         let parsed: Request = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, Request::Snooze { minutes: 30 });
+    }
+
+    #[test]
+    fn request_serde_dismiss() {
+        let start = Utc.with_ymd_and_hms(2026, 10, 21, 14, 0, 0).unwrap();
+        let request = Request::Dismiss {
+            provider_name: "google:work".to_string(),
+            calendar_id: "primary".to_string(),
+            event_id: "evt-123".to_string(),
+            start,
+        };
+        let json = serde_json::to_string(&request).unwrap();
+        assert!(json.contains("\"type\":\"dismiss\""));
+
+        let parsed: Request = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, request);
+    }
+
+    #[test]
+    fn request_serde_undismiss() {
+        let json = serde_json::to_string(&Request::undismiss(true)).unwrap();
+        assert_eq!(json, r#"{"type":"undismiss","all":true}"#);
+
+        let response = Response::Undismissed {
+            titles: vec!["Standup".to_string()],
+        };
+        let json = serde_json::to_string(&response).unwrap();
+        let parsed: Response = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, response);
     }
 
     #[test]

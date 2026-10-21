@@ -304,7 +304,7 @@ impl OutputFormatter {
         }
 
         // Get the next non-all-day meeting for the main display
-        let next_meeting = self.get_next_meeting_for_display(meetings);
+        let next_meeting = next_meeting_for_display(meetings);
 
         let (text, class) = if let Some(meeting) = next_meeting {
             let formatted = self.format_single_meeting(meeting, now, false, true);
@@ -376,9 +376,7 @@ impl OutputFormatter {
             .map(|m| self.to_json_meeting(m, now))
             .collect();
 
-        let next_meeting = self
-            .get_next_meeting_for_display(meetings)
-            .map(|m| self.to_json_meeting(m, now));
+        let next_meeting = next_meeting_for_display(meetings).map(|m| self.to_json_meeting(m, now));
 
         JsonOutput {
             count: json_meetings.len(),
@@ -742,18 +740,6 @@ impl OutputFormatter {
         }
     }
 
-    /// Gets the next non-all-day meeting for display.
-    fn get_next_meeting_for_display<'a>(
-        &self,
-        meetings: &'a [MeetingView],
-    ) -> Option<&'a MeetingView> {
-        // Prefer non-all-day meetings
-        meetings
-            .iter()
-            .find(|m| !m.is_all_day)
-            .or_else(|| meetings.first())
-    }
-
     /// Converts a MeetingView to JsonMeeting.
     fn to_json_meeting(&self, meeting: &MeetingView, now: DateTime<Local>) -> JsonMeeting {
         let urgency = self.compute_urgency(meeting, now);
@@ -776,6 +762,15 @@ impl OutputFormatter {
             urgency,
         }
     }
+}
+
+/// Returns the meeting shown in Waybar: the first non-all-day meeting, or
+/// the first meeting when there are only all-day events.
+pub fn next_meeting_for_display(meetings: &[MeetingView]) -> Option<&MeetingView> {
+    meetings
+        .iter()
+        .find(|m| !m.is_all_day)
+        .or_else(|| meetings.first())
 }
 
 /// Truncates a string with ellipsis if it exceeds the given length.
