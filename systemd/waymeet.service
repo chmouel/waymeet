@@ -1,6 +1,8 @@
 [Unit]
 Description=WayMeet Server
 After=graphical-session.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=simple
@@ -9,4 +11,4 @@ Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=default.target
