@@ -161,7 +161,19 @@ Supply Google credentials in either of these forms:
 - `client_id` and `client_secret` values, including `env::` and `pass::`
   references
 
-CalDAV credentials also support `env::` and `pass::` references.
+For example, to keep the OAuth client values in `pass` rather than in
+cleartext:
+
+```toml
+[[google.accounts]]
+name = "work"
+client_id = "pass::waymeet/google-client-id"
+client_secret = "pass::waymeet/google-client-secret"
+calendar_ids = ["primary"]
+```
+
+Each `pass::` reference runs `pass show <path>` and uses the first line of
+output. CalDAV credentials also support `env::` and `pass::` references.
 
 Tune the daemon cadence in the `[server]` section:
 

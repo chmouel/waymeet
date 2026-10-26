@@ -8,7 +8,12 @@
 # | *(none)*     | Used as plain text                                  |
 [[google.accounts]]
 name = "work"
-credentials_file = "/path/to/client_secret_<id>.json"
+# Provide either the downloaded Google OAuth Desktop App JSON file...
+# credentials_file = "/path/to/client_secret_<id>.json"
+# ...or the client ID and secret directly. Both fields support secret
+# references; `pass::` retrieves the first line of `pass show <path>`.
+client_id = "pass::waymeet/google-client-id"
+client_secret = "pass::waymeet/google-client-secret"
 # client_id = "env::WAYMEET_GOOGLE_CLIENT_ID"
 # client_secret = "env::WAYMEET_GOOGLE_CLIENT_SECRET"
 # domain = "example.com"              # Google Workspace domain (per-account)
@@ -21,7 +26,8 @@ calendar_ids = ["primary"]
 # Add more accounts as needed:
 # [[google.accounts]]
 # name = "personal"
-# credentials_file = "/path/to/other-client-secret.json"
+# client_id = "pass::waymeet/personal-google-client-id"
+# client_secret = "pass::waymeet/personal-google-client-secret"
 # calendar_ids = ["primary"]
 
 [caldav]
