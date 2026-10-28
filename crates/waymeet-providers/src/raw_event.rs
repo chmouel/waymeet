@@ -85,6 +85,7 @@ pub struct RawConferenceData {
     /// The type of conference (e.g., "hangoutsMeet", "addOn").
     pub conference_type: Option<String>,
     /// Entry points for joining the conference.
+    #[serde(default)]
     pub entry_points: Vec<RawEntryPoint>,
     /// The conference solution name (e.g., "Google Meet", "Zoom").
     pub solution_name: Option<String>,
@@ -94,6 +95,10 @@ pub struct RawConferenceData {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RawEntryPoint {
     /// The type of entry point (e.g., "video", "phone", "sip").
+    ///
+    /// Google omits this field on some entry points, so it defaults to an
+    /// empty string when absent.
+    #[serde(default)]
     pub entry_point_type: String,
     /// The URI for this entry point.
     pub uri: Option<String>,

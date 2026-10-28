@@ -161,8 +161,16 @@ fn extract_from_conference_data(conf: &RawConferenceData) -> Vec<EventLink> {
     let mut links = Vec::new();
 
     for entry_point in &conf.entry_points {
-        // Only process video entry points
-        if entry_point.entry_point_type != "video" {
+        // Only process video entry points. When Google omits the type,
+        // treat HTTP(S) URIs as video entry points rather than dropping a
+        // possibly useful join link.
+        let is_video = entry_point.entry_point_type == "video"
+            || (entry_point.entry_point_type.is_empty()
+                && entry_point
+                    .uri
+                    .as_deref()
+                    .is_some_and(|uri| uri.starts_with("http://") || uri.starts_with("https://")));
+        if !is_video {
             continue;
         }
 
@@ -420,6 +428,49 @@ mod tests {
                 normalized.links[0].meeting_id,
                 Some("xyz-uvwx-rst".to_string())
             );
+        }
+
+        #[test]
+        fn extracts_conference_link_when_type_is_missing() {
+            let conf = RawConferenceData {
+                conference_type: None,
+                solution_name: Some("Google Meet".to_string()),
+                entry_points: vec![RawEntryPoint {
+                    entry_point_type: String::new(),
+                    uri: Some("https://meet.google.com/xyz-uvwx-rst".to_string()),
+                    label: None,
+                    meeting_code: None,
+                    passcode: None,
+                    pin: None,
+                }],
+            };
+
+            let raw = sample_raw_event().with_conference_data(conf);
+            let normalized = normalize_event(&raw);
+
+            assert_eq!(normalized.links.len(), 1);
+            assert_eq!(normalized.links[0].kind, LinkKind::GoogleMeet);
+        }
+
+        #[test]
+        fn ignores_non_http_entry_point_of_unknown_type() {
+            let conf = RawConferenceData {
+                conference_type: None,
+                solution_name: Some("Google Meet".to_string()),
+                entry_points: vec![RawEntryPoint {
+                    entry_point_type: String::new(),
+                    uri: Some("tel:+15551234567".to_string()),
+                    label: None,
+                    meeting_code: None,
+                    passcode: None,
+                    pin: None,
+                }],
+            };
+
+            let raw = sample_raw_event().with_conference_data(conf);
+            let normalized = normalize_event(&raw);
+
+            assert!(normalized.links.is_empty());
         }
 
         #[test]

@@ -678,6 +678,9 @@ struct ApiConferenceSolution {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ApiEntryPoint {
+    /// Google omits `entryPointType` on some entry points (for example
+    /// add-on conference solutions), so it must not be required here.
+    #[serde(default)]
     entry_point_type: String,
     uri: Option<String>,
     label: Option<String>,
@@ -833,6 +836,45 @@ mod tests {
         assert!(event.conference_data.is_some());
         let cd = event.conference_data.unwrap();
         assert_eq!(cd.conference_solution.unwrap().name, "Zoom Meeting");
+    }
+
+    #[test]
+    fn parse_event_with_entry_point_missing_type() {
+        // Google omits `entryPointType` on some conference entry points;
+        // the response must still parse instead of failing the whole sync.
+        let json = r#"{
+            "id": "event1",
+            "summary": "Meeting with add-on",
+            "start": {
+                "dateTime": "2024-03-15T10:00:00Z"
+            },
+            "end": {
+                "dateTime": "2024-03-15T11:00:00Z"
+            },
+            "conferenceData": {
+                "conferenceSolution": {
+                    "name": "Google Meet"
+                },
+                "entryPoints": [
+                    {
+                        "uri": "https://meet.google.com/abc-defg-hij"
+                    }
+                ]
+            }
+        }"#;
+
+        let event: ApiEvent = serde_json::from_str(json).unwrap();
+        let entry_points = event
+            .conference_data
+            .unwrap()
+            .entry_points
+            .expect("entry points should be present");
+        assert_eq!(entry_points.len(), 1);
+        assert_eq!(entry_points[0].entry_point_type, "");
+        assert_eq!(
+            entry_points[0].uri.as_deref(),
+            Some("https://meet.google.com/abc-defg-hij")
+        );
     }
 
     #[test]
